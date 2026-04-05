@@ -8,7 +8,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
        os.makedirs("/data", exist_ok=True)
 
        with open(DATA_FILE, "a") as f:
-           f.write("Task accessed\n")
+           f.write("Task accessed.\n")
 
        with open(DATA_FILE, "r") as f:
            content = f.read()
