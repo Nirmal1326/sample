@@ -4,14 +4,12 @@ pipeline {
    stages {
        stage('Build') {
            steps {
-               echo 'Building Docker image...'
                sh 'docker build -t tasktrack-app .'
            }
        }
 
        stage('Run') {
            steps {
-               echo 'Running container...'
                sh '''
                docker stop jenkins-test || true
                docker rm jenkins-test || true
@@ -22,17 +20,20 @@ pipeline {
 
        stage('Test') {
            steps {
-               echo 'Testing application...'
-               sh 'sleep 5'
-               sh 'curl -f http://localhost:5000'
+               sh '''
+               docker logs jenkins-test
+               for i in {1..10}; do
+                 curl -f http://localhost:5000 && exit 0
+                 sleep 3
+               done
+               exit 1
+               '''
            }
        }
 
        stage('Cleanup') {
            steps {
-               echo 'Cleaning up...'
-               sh 'docker stop jenkins-test || true'
-               sh 'docker rm jenkins-test || true'
+               sh 'docker rm -f jenkins-test || true'
            }
        }
    }
