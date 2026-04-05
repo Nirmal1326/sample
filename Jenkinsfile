@@ -4,36 +4,39 @@ pipeline {
    stages {
        stage('Build') {
            steps {
+               echo 'Building Docker image...'
                sh 'docker build -t tasktrack-app .'
            }
        }
 
        stage('Run') {
            steps {
-               sh '''
-               docker stop jenkins-test || true
-               docker rm jenkins-test || true
-               docker run -d -p 5000:5000 --name jenkins-test tasktrack-app
-               '''
+               echo 'Running container...'
+               sh 'docker run -d -p 5000:5000 --name jenkins-test tasktrack-app'
            }
        }
 
        stage('Test') {
            steps {
-               sh '''
-               docker logs jenkins-test
-               for i in {1..10}; do
-                 curl -f http://localhost:5000 && exit 0
-                 sleep 3
-               done
-               exit 1
-               '''
+               echo 'Testing application...'
+               sh 'sleep 5'
+               sh 'curl -f http://localhost:5000'
            }
        }
 
-       stage('Cleanup') {
+       stage('Cleanup Test Container') {
            steps {
-               sh 'docker rm -f jenkins-test || true'
+               echo 'Cleaning up test container...'
+               sh 'docker stop jenkins-test || true'
+               sh 'docker rm jenkins-test || true'
+           }
+       }
+
+       stage('Deploy') {
+           steps {
+               echo 'Deploying application...'
+               sh 'docker compose down || true'
+               sh 'docker compose up -d --build'
            }
        }
    }
