@@ -12,7 +12,11 @@ pipeline {
        stage('Run') {
            steps {
                echo 'Running container...'
-               sh 'docker run -d -p 5000:5000 --name jenkins-test tasktrack-app'
+               sh '''
+               docker stop jenkins-test || true
+               docker rm jenkins-test || true
+               docker run -d -p 5000:5000 --name jenkins-test tasktrack-app
+               '''
            }
        }
 
