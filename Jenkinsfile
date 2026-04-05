@@ -11,16 +11,29 @@ pipeline {
             steps {
                 echo 'Running container...'
                 sh 'docker rm -f jenkins-test || true'
-                sh 'docker run -d --network host --name jenkins-test tasktrack-app'
+                // Back to -p port mapping; drop --network host
+                sh 'docker run -d -p 5000:5000 --name jenkins-test tasktrack-app'
             }
         }
         stage('Test') {
             steps {
                 echo 'Testing application...'
-                retry(5) {
-                    sh 'sleep 3'
-                    sh 'curl -f http://localhost:5000'
-                }
+                sh '''
+                    # Get the container IP directly — works regardless of how Jenkins is hosted
+                    CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' jenkins-test)
+                    echo "Container IP: $CONTAINER_IP"
+
+                    # Wait until the app responds, up to 30 seconds
+                    for i in $(seq 1 10); do
+                        echo "Attempt $i..."
+                        curl -sf http://$CONTAINER_IP:5000 && echo "App is up!" && exit 0
+                        sleep 3
+                    done
+
+                    echo "App failed to respond after 30 seconds"
+                    docker logs jenkins-test
+                    exit 1
+                '''
             }
         }
         stage('Cleanup Test Container') {
