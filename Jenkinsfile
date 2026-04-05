@@ -12,7 +12,10 @@ pipeline {
        stage('Run') {
            steps {
                echo 'Running container...'
-               sh 'docker run -d -p 5000:5000 --name jenkins-test tasktrack-app'
+               sh '''
+               docker rm -f jenkins-test || true
+               docker run -d -p 5000:5000 --name jenkins-test tasktrack-app
+               '''
            }
        }
 
@@ -27,16 +30,17 @@ pipeline {
        stage('Cleanup Test Container') {
            steps {
                echo 'Cleaning up test container...'
-               sh 'docker stop jenkins-test || true'
-               sh 'docker rm jenkins-test || true'
+               sh 'docker rm -f jenkins-test || true'
            }
        }
 
        stage('Deploy') {
            steps {
                echo 'Deploying application...'
-               sh 'docker compose down || true'
-               sh 'docker compose up -d --build'
+               sh '''
+               docker compose down || true
+               docker compose up -d --build
+               '''
            }
        }
    }
